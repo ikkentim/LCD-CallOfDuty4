@@ -1,4 +1,4 @@
-LCD-CallOfDuty4
+LCD: Call of Duty 4
 ===============
 
-Under construction...
+Monitor CoD4 servers on your G15/G510 keyboard.
