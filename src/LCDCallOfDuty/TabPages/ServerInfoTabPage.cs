@@ -141,6 +141,26 @@ namespace LCDCallOfDuty.TabPages
             ResumeLayout();
         }
 
+        private void RemovePlayers()
+        {
+            foreach (var l in _playerLabels)
+                Controls.Remove(l);
+            _playerLabels.Clear();
+        }
+
+        private bool IsBot(string name)
+        {
+            var startsWithBot = name.StartsWith("bot");
+            var numbers = name.Skip(3).All(c => c >= '0' && c <= '9');
+            return startsWithBot && numbers;
+        }
+
+        private int TryParseInt(string value)
+        {
+            int result;
+            return int.TryParse(value, out result) ? result : 0;
+        }
+
         #region Overrides of ServerTabPage
 
         protected override async void Refresh()
@@ -159,14 +179,17 @@ namespace LCDCallOfDuty.TabPages
                 try
                 {
                     var result = await App.CurrentServer.Query().TimeoutAfter(TimeSpan.FromMilliseconds(1000));
-                    var playerCount = result.Players.Count();
+                    var players = result.Players.Where(p => !IsBot(p.Name)).ToArray();
+                    var playerCount = players.Length;
+                    var botCount = result.Players.Count() - playerCount;
+
                     _serverNameMarquee.Text = result.Variables.Get("sv_hostname").RemoveColors();
                     _mapNameLabel.Text = result.Variables.Get("mapname").Substring(3);
                     _mapNameLabel.Visible = true;
-                    _playerCountLabel.Text = $"{playerCount}/{result.Variables["sv_maxclients"]}";
+                    _playerCountLabel.Text = $"{playerCount}/{TryParseInt(result.Variables["sv_maxclients"]) - botCount}";
                     _playerCountLabel.Visible = true;
 
-                    _players = result.Players.ToArray();
+                    _players = players.ToArray();
                     DrawPlayers();
                 }
                 catch
@@ -179,13 +202,6 @@ namespace LCDCallOfDuty.TabPages
                 }
             }
             ResumeLayout();
-        }
-
-        private void RemovePlayers()
-        {
-            foreach (var l in _playerLabels)
-                Controls.Remove(l);
-            _playerLabels.Clear();
         }
 
         #endregion
